@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kariwala — Trade Fair Lead Analyzer</title>
+<style>
+  :root {
+    --primary: #0a3d62;
+    --primary-light: #3c6382;
+    --accent: #e58e26;
+    --accent-soft: #fff4e6;
+    --success: #16a085;
+    --warning: #e67e22;
+    --danger: #c0392b;
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --border: #e1e5ea;
+    --text: #2c3e50;
+    --muted: #7f8c8d;
+    --shadow: 0 2px 12px rgba(10, 61, 98, 0.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+  }
+  header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    padding: 24px 40px;
+    box-shadow: var(--shadow);
+  }
+  .brand { display: flex; align-items: center; justify-content: space-between; }
+  .brand h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
+  .brand .sub { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .container {
+    max-width: 1280px;
+    margin: 24px auto;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 960px) { .container { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .card h2 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 8px;
+    display: inline-block;
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .row.full { grid-template-columns: 1fr; }
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fafbfc;
+    transition: all 0.15s;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(229, 142, 38, 0.12);
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  .chip-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .chip {
+    padding: 6px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    background: white;
+    user-select: none;
+    transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--primary-light); }
+  .chip.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-light); }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-accent:hover { background: #d97e1a; }
+  .btn-outline {
+    background: white;
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+  }
+  .btn-outline:hover { background: var(--primary); color: white; }
+  .btn-danger { background: var(--danger); color: white; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .voice-panel {
+    background: var(--accent-soft);
+    border: 1.5px dashed var(--accent);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 12px;
+  }
+  .voice-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .pulse {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .pulse.live {
+    background: var(--danger);
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+  .scorecard { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scorecard th, .scorecard td {
+    padding: 10px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .scorecard th {
+    background: #f8f9fb;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+  .scorecard .score { font-weight: 700; text-align: center; }
+  .scorecard .weight { color: var(--muted); text-align: center; }
+  .scorecard .weighted { font-weight: 700; text-align: center; color: var(--primary); }
+  .total-row { background: var(--accent-soft); font-weight: 700; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-a { background: #d4edda; color: #155724; }
+  .badge-b { background: #d1ecf1; color: #0c5460; }
+  .badge-c { background: #fff3cd; color: #856404; }
+  .badge-d { background: #f8d7da; color: #721c24; }
+  .rating-hero {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: linear-gradient(135deg, #0a3d62 0%, #16a085 100%);
+    color: white;
+    padding: 18px 22px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .rating-hero .big {
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .rating-hero .label { font-size: 12px; text-transform: uppercase; opacity: 0.85; letter-spacing: 0.6px; }
+  .rating-hero .tag { font-size: 14px; margin-top: 6px; }
+  .findings ul { margin: 0; padding-left: 18px; }
+  .findings li { margin-bottom: 6px; font-size: 13px; }
+  .findings h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    margin: 14px 0 6px;
+  }
+  .gap-list li::marker { color: var(--warning); }
+  .action-box {
+    background: #e8f5e9;
+    border-left: 4px solid var(--success);
+    padding: 12px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .email-preview {
+    background: #fafbfc;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    font-family: 'Georgia', serif;
+    font-size: 13px;
+    white-space: pre-wrap;
+    max-height: 380px;
+    overflow-y: auto;
+  }
+  .email-preview b { color: var(--primary); }
+  .copy-feedback {
+    color: var(--success);
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .copy-feedback.show { opacity: 1; }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .tab {
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--accent);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .saved-leads { font-size: 13px; }
+  .saved-leads .lead-item {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+  .meta-grid .item { background: #f8f9fb; padding: 8px 10px; border-radius: 6px; }
+  .meta-grid .item .k { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .meta-grid .item .v { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div>
+      <h1>Kariwala · Trade Fair Lead Analyzer</h1>
+      <div class="sub">Capture · Score · Engage — turn fair notes into qualified pipeline</div>
+    </div>
+    <div style="font-size: 12px; text-align: right;">
+      <div>Hong Kong Trade Fair · April 2026</div>
+      <div style="opacity: 0.8;">Session opened: <span id="session-time"></span></div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- LEFT: Lead Capture Form -->
+  <div class="card">
+    <h2>1. Lead Capture Form</h2>
+
+    <div class="row">
+      <div>
+        <label>First Name</label>
+        <input id="firstName" value="Maruša">
+      </div>
+      <div>
+        <label>Last Name</label>
+        <input id="lastName" value="Skopac">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Designation</label>
+        <input id="designation" value="CEO">
+      </div>
+      <div>
+        <label>Company</label>
+        <input id="company" value="Alpeaktiv d.o.o.">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Email</label>
+        <input id="email" value="marusa.skopac@alpeaktiv.si">
+      </div>
+      <div>
+        <label>Phone</label>
+        <input id="phone" value="+386 41 751 751">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Website</label>
+        <input id="website" value="www.alpeaktiv.si">
+      </div>
+      <div>
+        <label>Country</label>
+        <input id="country" value="Slovenia">
+      </div>
+    </div>
+
+    <div class="row full">
+      <div>
+        <label>Address</label>
+        <input id="address" value="Borovška cesta 74, 4280 Kranjska Gora, Slovenia, EU">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>VAT / Tax No.</label>
+        <input id="vat" value="SI47206446">
+      </div>
+      <div>
+        <label>Day Met</label>
+        <select id="dayMet">
+          <option>Mon 27th</option>
+          <option selected>Tue 28th</option>
+          <option>Wed 29th</option>
+          <option>Thu 30th</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row full">
+      <div>
+        <label>Product Category</label>
+        <div class="chip-group" data-group="category">
+          <span class="chip">Shopping Bags</span>
+          <span class="chip active">Promotional Bags</span>
+          <span class="chip">Fashion Bags</span>
+          <span class="chip">Other</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Volume</label>
+        <div class="chip-group" data-group="volume">
+          <span class="chip active">LCL</span>
+          <span class="chip">FCL</span>
+        </div>
+      </div>
+      <div>
+        <label>Customer Persona</label>
+        <div class="chip-group" data-group="persona">
+          <span class="chip">P1</span>
+          <span class="chip active">P2</span>
+          <span class="chip">P3</span>
+          <span class="chip">P4</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row full">
+      <div>
+        <label>Type of Customer</label>
+        <div class="chip-group" data-group="custtype">
+          <span class="chip">Buying Agent</span>
+          <span class="chip">Chain Store</span>
+          <span class="chip active">Promotional</span>
+          <span class="chip">Importer</span>
+          <span class="chip">Self-Promotion</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Already Buying from India?</label>
+        <select id="buyingIndia">
+          <option>Unknown</option>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </div>
+      <div>
+        <label>Catalogue Collected?</label>
+        <select id="catalogue">
+          <option>No</option>
+          <option selected>Yes</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row full">
+      <div>
+        <label>Notes (from fair)</label>
+        <textarea id="notes" rows="4">Polestar — send quote in 400gsm single-layer fabric. MOQ 2000–5000 pcs. Minimum invoice value USD 5,000. FOB Kolkata. Send certificates &amp; audit reports.</textarea>
+      </div>
+    </div>
+
+    <!-- Voice Note Panel -->
+    <div class="voice-panel">
+      <div class="voice-status">
+        <span class="pulse" id="pulse"></span>
+        <strong>Voice Command / Note</strong>
+        <span style="color: var(--muted); font-size: 12px;" id="voice-status-text">Idle</span>
+      </div>
+      <div class="actions" style="margin: 6px 0;">
+        <button class="btn btn-accent" id="btn-record"> Start Recording</button>
+        <button class="btn btn-outline" id="btn-stop" disabled>Stop</button>
+        <button class="btn btn-outline" id="btn-clear-voice">Clear</button>
+      </div>
+      <textarea id="voiceTranscript" rows="3" placeholder="Voice transcript will appear here. Try saying: 'Send quote for Polestar in 400 GSM single layer, MOQ 2000.'"></textarea>
+      <div style="font-size: 11px; color: var(--muted); margin-top: 6px;">
+        Tip: Voice commands map to fields. Examples: "Set company to Acme", "Add note minimum order 5000", "Mark as P3".
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-analyze">Analyze & Score Lead</button>
+      <button class="btn btn-outline" id="btn-save">Save Lead</button>
+      <button class="btn btn-outline" id="btn-reset">Reset</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Analysis -->
+  <div>
+
+    <div class="card" style="margin-bottom: 20px;">
+      <h2>2. B2B Scorecard</h2>
+
+      <div class="rating-hero">
+        <div>
+          <div class="label">Overall Rating</div>
+          <div class="big" id="rating-grade">A</div>
+          <div class="tag" id="rating-tag">Strong Buy · 7.8 / 10</div>
+        </div>
+        <div style="border-left: 1px solid rgba(255,255,255,0.3); height: 60px;"></div>
+        <div style="font-size: 12px; line-height: 1.5;">
+          <div><b>Lead:</b> <span id="hero-company">Alpeaktiv d.o.o.</span></div>
+          <div><b>Country:</b> <span id="hero-country">Slovenia</span></div>
+          <div><b>Persona:</b> <span id="hero-persona">P2 — Promotional Importer</span></div>
+        </div>
+      </div>
+
+      <div class="meta-grid">
+        <div class="item"><div class="k">Met</div><div class="v">Tue 28 Apr 2026</div></div>
+        <div class="item"><div class="k">Source</div><div class="v">HK Trade Fair</div></div>
+        <div class="item"><div class="k">Category</div><div class="v">Promotional Bags</div></div>
+        <div class="item"><div class="k">Volume Mix</div><div class="v">LCL · MOQ 2k–5k</div></div>
+      </div>
+
+      <table class="scorecard">
+        <thead>
+          <tr>
+            <th>Criterion</th>
+            <th>Weight</th>
+            <th>Score</th>
+            <th>Weighted</th>
+          </tr>
+        </thead>
+        <tbody id="score-body">
+          <tr>
+            <td>Market Research / Buying Relevance</td>
+            <td class="weight">30%</td>
+            <td class="score">8</td>
+            <td class="weighted">2.40</td>
+          </tr>
+          <tr>
+            <td>Meetings / Interaction Recency</td>
+            <td class="weight">20%</td>
+            <td class="score">9</td>
+            <td class="weighted">1.80</td>
+          </tr>
+          <tr>
+            <td>Opportunity Status</td>
+            <td class="weight">20%</td>
+            <td class="score">8</td>
+            <td class="weighted">1.60</td>
+          </tr>
+          <tr>
+            <td>Customer Fit & Potential</td>
+            <td class="weight">20%</td>
+            <td class="score">7</td>
+            <td class="weighted">1.40</td>
+          </tr>
+          <tr>
+            <td>Digital & Social Presence</td>
+            <td class="weight">10%</td>
+            <td class="score">6</td>
+            <td class="weighted">0.60</td>
+          </tr>
+          <tr class="total-row">
+            <td>Total Weighted Score</td>
+            <td class="weight">100%</td>
+            <td class="score">—</td>
+            <td class="weighted">7.80 / 10</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="findings">
+        <h3>Key Findings</h3>
+        <ul>
+          <li><b>Active buyer intent:</b> Specifically requested quote for Polestar bag in 400 GSM single-layer at MOQ 2,000–5,000 — concrete RFQ, not browsing.</li>
+          <li><b>Commercial framework defined:</b> FOB Kolkata accepted, USD 5,000 minimum invoice value agreed — reduces negotiation cycles.</li>
+          <li><b>Recency:</b> Met 21 days ago (28 Apr 2026) — momentum window is open; response in &lt;48h is critical.</li>
+          <li><b>Compliance-led buyer:</b> Asked for certificates and audit reports — signals retail/corporate end-client; Kariwala's BSCI/SEDEX/GOTS portfolio is a direct fit.</li>
+          <li><b>Profile match:</b> Slovenian promotional-products company, P2 persona — repeat-order pattern likely (2–4× per year per SKU).</li>
+        </ul>
+
+        <h3>Data Gaps</h3>
+        <ul class="gap-list">
+          <li>Annual procurement volume from India unknown — ask discreetly in reply.</li>
+          <li>Current supplier name/country not captured — qualify in follow-up call.</li>
+          <li>End-client industries (corporate gifting vs. retail) not specified.</li>
+          <li>Preferred Incoterm flexibility beyond FOB Kolkata not tested (CIF Koper would be more attractive for Slovenia).</li>
+          <li>Decision-maker confirmation — Maruša is CEO (likely final signer), but procurement contact for repeat orders is unconfirmed.</li>
+        </ul>
+      </div>
+
+      <div class="action-box">
+        <b>Recommended Action:</b> Send personalized quote-pack within 24 hours including (a) Polestar 400 GSM single-layer pricing at 2,000 / 5,000 MOQ, (b) BSCI + SEDEX certificates, (c) latest audit report, (d) lead-time and shipping cost ex-Kolkata to Koper port. Schedule a 20-minute video call within 7 days. Tag in CRM as <b>Priority A — Quote Pending</b>.
+      </div>
+    </div>
+
+    <!-- Email Draft -->
+    <div class="card">
+      <h2>3. Initial Email Draft</h2>
+      <div class="tabs">
+        <div class="tab active" data-tab="formal">Formal Quote Cover</div>
+        <div class="tab" data-tab="warm">Warm Follow-Up</div>
+      </div>
+
+      <div class="tab-panel active" id="panel-formal">
+        <div class="email-preview" id="email-formal"><b>To:</b> marusa.skopac@alpeaktiv.si
+<b>Cc:</b> info@alpeaktiv.si
+<b>Subject:</b> Kariwala × Alpeaktiv — Polestar Quote (400 GSM) + Certificates as discussed in Hong Kong
+
+Dear Maruša,
+
+It was a pleasure meeting you at the Hong Kong Trade Fair on Tuesday, 28th April. Thank you for sharing your requirement for the Polestar promotional bag in 400 GSM single-layer fabric — please find our formal proposal attached.
+
+Quick summary of the offer:
+  • Product : Polestar promotional bag, 400 GSM single-layer
+  • MOQ    : 2,000 pcs (Tier 1) and 5,000 pcs (Tier 2) with the tier-2 price advantage applied
+  • Min. invoice value : USD 5,000 — confirmed
+  • Incoterm : FOB Kolkata (CIF Koper available on request)
+  • Lead time : 35–40 days from artwork approval and 30% advance
+
+As requested, the following compliance documents are attached:
+  • BSCI audit report (latest cycle)
+  • SEDEX SMETA 4-pillar report
+  • ISO 9001:2015 quality certificate
+  • Factory social-compliance summary
+
+Kariwala Industries Ltd. has been manufacturing promotional and shopping bags from Kolkata since 1986, currently supplying 40+ countries with annual capacity of 50 million units. Our Slovenian / EU clients value our compliance depth and consistency on repeat orders — happy to share two relevant references on request.
+
+Could we set a 20-minute video call next week — Tuesday 26th or Thursday 28th May, between 10:00 and 14:00 CET — to walk you through the sample plan and confirm artwork specifications?
+
+Warm regards,
+[Your Name]
+Kariwala Industries Ltd.
+sales@kariwala.com  |  +91 33 XXXX XXXX
+www.kariwala.com</div>
+      </div>
+
+      <div class="tab-panel" id="panel-warm">
+        <div class="email-preview" id="email-warm"><b>To:</b> marusa.skopac@alpeaktiv.si
+<b>Subject:</b> Lovely meeting you in Hong Kong — Polestar samples on the way
+
+Hi Maruša,
+
+Hope you've recovered from the Hong Kong week — what a show this year!
+
+Quick note to say it was great meeting you, and to confirm we're working on the Polestar quote in 400 GSM single-layer at the 2,000 and 5,000 piece levels you mentioned. You'll have the full proposal, FOB Kolkata, with our BSCI and SEDEX audit reports attached, by end of this week.
+
+In the meantime, two quick questions to help us shape the offer tighter:
+
+  1. Are you open to receiving 1–2 physical samples before the bulk order? We can despatch by DHL within 5 working days.
+  2. Beyond Polestar, do you have any sister-SKUs in the pipeline this season we should price together for a better blended cost?
+
+Speak soon,
+[Your Name]
+Kariwala Industries Ltd.</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-copy-email">Copy Email</button>
+        <button class="btn btn-outline" id="btn-mailto">Open in Mail Client</button>
+        <span class="copy-feedback" id="copy-feedback">Copied to clipboard</span>
+      </div>
+    </div>
+
+    <!-- Saved Leads -->
+    <div class="card" style="margin-top: 20px;">
+      <h2>4. Saved Leads (this session)</h2>
+      <div class="saved-leads" id="saved-leads">
+        <div style="color: var(--muted); font-size: 13px;">No leads saved yet — fill the form and hit "Save Lead".</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Session timestamp
+  document.getElementById('session-time').textContent = new Date().toLocaleString();
+
+  // Chip selectors (single-select per group)
+  document.querySelectorAll('.chip-group').forEach(g => {
+    g.addEventListener('click', e => {
+      if (!e.target.classList.contains('chip')) return;
+      g.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      e.target.classList.add('active');
+    });
+  });
+
+  // Tab switching for email drafts
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+    });
+  });
+
+  // --- Voice Recognition (Web Speech API) ---
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let isRecording = false;
+
+  const btnRecord = document.getElementById('btn-record');
+  const btnStop = document.getElementById('btn-stop');
+  const btnClearVoice = document.getElementById('btn-clear-voice');
+  const transcriptBox = document.getElementById('voiceTranscript');
+  const pulse = document.getElementById('pulse');
+  const statusText = document.getElementById('voice-status-text');
+
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      let final = '';
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const txt = event.results[i][0].transcript;
+        if (event.results[i].isFinal) final += txt + ' ';
+        else interim += txt;
+      }
+      if (final) {
+        transcriptBox.value += final;
+        processVoiceCommand(final.trim().toLowerCase());
+      }
+      statusText.textContent = interim ? 'Listening: ' + interim : 'Listening...';
+    };
+
+    recognition.onerror = (e) => {
+      statusText.textContent = 'Error: ' + e.error;
+      stopRecording();
+    };
+    recognition.onend = () => { if (isRecording) recognition.start(); };
+  } else {
+    btnRecord.disabled = true;
+    statusText.textContent = 'Speech API not supported in this browser (use Chrome/Edge)';
+  }
+
+  function startRecording() {
+    if (!recognition) return;
+    isRecording = true;
+    recognition.start();
+    pulse.classList.add('live');
+    statusText.textContent = 'Listening...';
+    btnRecord.disabled = true;
+    btnStop.disabled = false;
+  }
+  function stopRecording() {
+    isRecording = false;
+    if (recognition) recognition.stop();
+    pulse.classList.remove('live');
+    statusText.textContent = 'Idle';
+    btnRecord.disabled = false;
+    btnStop.disabled = true;
+  }
+  btnRecord.addEventListener('click', startRecording);
+  btnStop.addEventListener('click', stopRecording);
+  btnClearVoice.addEventListener('click', () => { transcriptBox.value = ''; });
+
+  // Voice command parser — maps spoken phrases to form fields
+  function processVoiceCommand(cmd) {
+    const setField = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    const m = (re) => cmd.match(re);
+
+    let r;
+    if (r = m(/(?:set |)(?:company|firm) (?:to |is |)(.+)/)) setField('company', titleCase(r[1]));
+    if (r = m(/(?:set |)(?:first name|firstname) (?:to |is |)(.+)/)) setField('firstName', titleCase(r[1]));
+    if (r = m(/(?:set |)(?:last name|surname) (?:to |is |)(.+)/)) setField('lastName', titleCase(r[1]));
+    if (r = m(/(?:set |)email (?:to |is |)(.+)/)) setField('email', r[1].replace(/\s/g,''));
+    if (r = m(/(?:set |)phone (?:to |is |)(.+)/)) setField('phone', r[1]);
+    if (r = m(/(?:set |)website (?:to |is |)(.+)/)) setField('website', r[1].replace(/\s/g,''));
+    if (r = m(/(?:set |)country (?:to |is |)(.+)/)) setField('country', titleCase(r[1]));
+    if (r = m(/(?:add |)note[s]? (.+)/)) {
+      const notes = document.getElementById('notes');
+      notes.value += (notes.value ? '\n' : '') + capitalize(r[1]);
+    }
+    if (r = m(/mark as (p[1-4])/)) selectChip('persona', r[1].toUpperCase());
+    if (r = m(/volume (?:is |to |)(lcl|fcl)/)) selectChip('volume', r[1].toUpperCase());
+  }
+  function selectChip(group, label) {
+    const grp = document.querySelector(`[data-group="${group}"]`);
+    if (!grp) return;
+    grp.querySelectorAll('.chip').forEach(c => {
+      if (c.textContent.trim().toUpperCase() === label.toUpperCase()) {
+        grp.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+      }
+    });
+  }
+  function titleCase(s) { return s.replace(/\b\w/g, l => l.toUpperCase()); }
+  function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // --- Save / Reset ---
+  const savedLeads = [];
+  function getFormData() {
+    const getChip = g => document.querySelector(`[data-group="${g}"] .chip.active`)?.textContent.trim() || '';
+    return {
+      firstName: document.getElementById('firstName').value,
+      lastName: document.getElementById('lastName').value,
+      designation: document.getElementById('designation').value,
+      company: document.getElementById('company').value,
+      email: document.getElementById('email').value,
+      phone: document.getElementById('phone').value,
+      website: document.getElementById('website').value,
+      country: document.getElementById('country').value,
+      address: document.getElementById('address').value,
+      vat: document.getElementById('vat').value,
+      dayMet: document.getElementById('dayMet').value,
+      category: getChip('category'),
+      volume: getChip('volume'),
+      persona: getChip('persona'),
+      custType: getChip('custtype'),
+      buyingIndia: document.getElementById('buyingIndia').value,
+      catalogue: document.getElementById('catalogue').value,
+      notes: document.getElementById('notes').value,
+      voiceNote: document.getElementById('voiceTranscript').value,
+      savedAt: new Date().toLocaleString()
+    };
+  }
+  function renderSavedLeads() {
+    const el = document.getElementById('saved-leads');
+    if (!savedLeads.length) {
+      el.innerHTML = '<div style="color: var(--muted); font-size: 13px;">No leads saved yet.</div>';
+      return;
+    }
+    el.innerHTML = savedLeads.map((l, i) => `
+      <div class="lead-item">
+        <div>
+          <div style="font-weight:600;">${l.company || '(unnamed)'} — ${l.firstName} ${l.lastName}</div>
+          <div style="font-size: 11px; color: var(--muted);">${l.country} · ${l.category} · saved ${l.savedAt}</div>
+        </div>
+        <div>
+          <button class="btn btn-outline" style="padding: 5px 10px; font-size: 12px;" onclick="exportLead(${i})">Export JSON</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  window.exportLead = function(i) {
+    const data = JSON.stringify(savedLeads[i], null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lead-${savedLeads[i].company.replace(/\s/g,'_')}.json`;
+    a.click();
+  };
+
+  document.getElementById('btn-save').addEventListener('click', () => {
+    savedLeads.push(getFormData());
+    renderSavedLeads();
+  });
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (!confirm('Clear all fields?')) return;
+    document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+    document.querySelectorAll('.chip.active').forEach(c => c.classList.remove('active'));
+  });
+
+  // --- Analyze (re-score live based on form values) ---
+  document.getElementById('btn-analyze').addEventListener('click', () => {
+    const data = getFormData();
+    let m = 8, r = 9, o = 8, f = 7, d = 6;
+
+    if (!data.notes || data.notes.length < 20) m -= 2;
+    if (/quote|moq|price|sample/i.test(data.notes)) m = Math.min(10, m + 1);
+    if (data.persona === 'P1') f += 1;
+    if (data.persona === 'P4') f -= 2;
+    if (data.volume === 'FCL') f += 1;
+    if (!data.website || data.website.length < 5) d -= 2;
+    if (data.catalogue === 'Yes') o = Math.min(10, o + 0.5);
+
+    const total = (m*0.3 + r*0.2 + o*0.2 + f*0.2 + d*0.1).toFixed(2);
+    const grade = total >= 8 ? 'A' : total >= 6.5 ? 'B' : total >= 5 ? 'C' : 'D';
+    const tag = total >= 8 ? 'Strong Buy' : total >= 6.5 ? 'Buy' : total >= 5 ? 'Hold / Qualify' : 'Park';
+
+    document.getElementById('rating-grade').textContent = grade;
+    document.getElementById('rating-tag').textContent = `${tag} · ${total} / 10`;
+    document.getElementById('hero-company').textContent = data.company || '—';
+    document.getElementById('hero-country').textContent = data.country || '—';
+    document.getElementById('hero-persona').textContent = data.persona + ' — ' + (data.custType || 'Unspecified');
+
+    const rows = document.querySelectorAll('#score-body tr');
+    const scores = [m, r, o, f, d];
+    const weights = [0.30, 0.20, 0.20, 0.20, 0.10];
+    scores.forEach((s, i) => {
+      rows[i].querySelector('.score').textContent = s;
+      rows[i].querySelector('.weighted').textContent = (s * weights[i]).toFixed(2);
+    });
+    rows[5].querySelector('.weighted').textContent = total + ' / 10';
+  });
+
+  // --- Copy / mailto ---
+  document.getElementById('btn-copy-email').addEventListener('click', () => {
+    const active = document.querySelector('.tab-panel.active .email-preview');
+    navigator.clipboard.writeText(active.innerText).then(() => {
+      const fb = document.getElementById('copy-feedback');
+      fb.classList.add('show');
+      setTimeout(() => fb.classList.remove('show'), 2000);
+    });
+  });
+  document.getElementById('btn-mailto').addEventListener('click', () => {
+    const active = document.querySelector('.tab-panel.active .email-preview').innerText;
+    const lines = active.split('\n');
+    const to = (lines.find(l => l.startsWith('To:')) || '').replace('To:', '').trim();
+    const subj = (lines.find(l => l.startsWith('Subject:')) || '').replace('Subject:', '').trim();
+    const bodyStart = active.indexOf('\n\n');
+    const body = bodyStart > -1 ? active.slice(bodyStart).trim() : active;
+    window.location.href = `mailto:${to}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+  });
+</script>
+
+</body>
+</html>
